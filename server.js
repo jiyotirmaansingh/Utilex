@@ -6,7 +6,7 @@ const cors = require("cors");
 const path = require("path");
 const { Server } = require("socket.io");
 const contactRouter = require("./routes/contact.route");
-
+const helmet = require("helmet");
 require("dotenv").config();
 
 // 📦 Import Custom Modules
@@ -175,3 +175,60 @@ io.on("connection", (socket) => {
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+const cspDirectives = {
+  defaultSrc: ["'self'"],
+  scriptSrc: [
+    "'self'",
+    "'unsafe-inline'",
+    "'unsafe-eval'",
+    "https://cdn.tailwindcss.com",
+    "https://cdn.jsdelivr.net",
+    "https://cdnjs.cloudflare.com",
+    "https://cdn.socket.io",
+    "https://cdn.jsdelivr.net",
+    "https://cdn.jsdelivr.net/npm/sweetalert2@11",
+    "https://kit.fontawesome.com"
+  ],
+  connectSrc: [
+    "'self'",
+    process.env.FRONTEND_URL || "http://localhost:3000",
+    // backend origin for sockets & api
+    process.env.BACKEND_URL || process.env.FRONTEND_URL || process.env.FRONTEND || "https://utilex.onrender.com",
+    // allow wss to backend domain
+    `wss://${(process.env.BACKEND_DOMAIN || (process.env.FRONTEND_URL && new URL(process.env.FRONTEND_URL).hostname) || 'utilex.onrender.com')}`,
+    "https://api.github.com",
+    "https://raw.githubusercontent.com"
+  ],
+  imgSrc: [
+    "'self'",
+    "data:",
+    "blob:",
+    "https://images.unsplash.com",
+    "https://avatars.githubusercontent.com",
+    "https://cdn.jsdelivr.net"
+  ],
+  styleSrc: [
+    "'self'",
+    "'unsafe-inline'",
+    "https://cdn.jsdelivr.net",
+    "https://cdnjs.cloudflare.com"
+  ],
+  fontSrc: [
+    "'self'",
+    "data:",
+    "https://cdnjs.cloudflare.com",
+    "https://cdn.jsdelivr.net"
+  ],
+  // you can restrict frameAncestors via header (helmet will set it)
+  frameAncestors: ["'self'"],
+  baseUri: ["'self'"]
+};
+
+// apply helmet with CSP
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: cspDirectives
+    }
+  })
+);
