@@ -3,7 +3,53 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdn.socket.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http://localhost:8080 ws://localhost:8080 http://127.0.0.1:5500; img-src 'self' data: http://127.0.0.1:5500 https:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; frame-ancestors 'self'; base-uri 'self';">
+  <meta http-equiv="Content-Security-Policy"
+  content="
+    default-src 'self';
+
+    script-src 
+      'self'
+      'unsafe-inline'
+      'unsafe-eval'
+      https://cdn.tailwindcss.com
+      https://cdn.jsdelivr.net
+      https://cdnjs.cloudflare.com
+      https://cdn.socket.io
+      https://cdn.jsdelivr.net/npm/sweetalert2@11
+      https://kit.fontawesome.com;
+
+    connect-src 
+      'self'
+      https://utilex.onrender.com
+      wss://utilex.onrender.com
+      https://api.github.com
+      https://raw.githubusercontent.com;
+
+    img-src 
+      'self'
+      data:
+      blob:
+      https://images.unsplash.com
+      https://avatars.githubusercontent.com
+      https://cdn.jsdelivr.net;
+
+    style-src
+      'self'
+      'unsafe-inline'
+      https://cdn.jsdelivr.net
+      https://cdnjs.cloudflare.com;
+
+    font-src
+      'self'
+      data:
+      https://cdnjs.cloudflare.com
+      https://cdn.jsdelivr.net;
+
+    frame-ancestors 'self';
+
+    base-uri 'self';
+  ">
+
   <title>Login | Utilex.</title>
 
   <!-- Tailwind CSS -->
