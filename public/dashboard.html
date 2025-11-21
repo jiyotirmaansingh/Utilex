@@ -138,6 +138,9 @@
       });
     });
 
+    // Use your Render backend here:
+    const BACKEND = "https://utilex.onrender.com";
+
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token") || localStorage.getItem("token");
     const name = params.get("name") || localStorage.getItem("name");
@@ -150,7 +153,8 @@
     let room = prompt("Enter room name to join:", "general") || "general";
     document.getElementById("chat-room").innerText = `Utilex • Room: ${room}`;
 
-    const socket = io("http://localhost:8080", { transports: ["websocket"] });
+    // Connect explicitly to Render backend for Socket.IO
+    const socket = io(BACKEND, { transports: ["websocket"], withCredentials: true });
     const input = document.getElementById("ip");
     const messagesDiv = document.getElementById("messages");
     const typingDiv = document.getElementById("typing");
@@ -159,6 +163,7 @@
     socket.on("connect", () => {
       mySocketId = socket.id;
       socket.emit("joinRoom", { username: name, room });
+      console.log("🔌 Socket connected:", mySocketId);
     });
 
     function sendMessage() {

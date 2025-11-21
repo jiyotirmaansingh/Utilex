@@ -120,23 +120,29 @@
 
   <!-- ✅ Registration Logic -->
   <script>
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    // POINT TO YOUR BACKEND (Render)
+    const BACKEND = "https://utilex.onrender.com";
+  
+    const registerForm = document.getElementById("registerForm");
+  
+    registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-
+  
       const name = document.getElementById("name").value.trim();
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
-
+  
       try {
-        const res = await fetch("/api/user/register", {
+        const res = await fetch(`${BACKEND}/api/user/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password })
+          body: JSON.stringify({ name, email, password }),
         });
-
-        const responseText = await res.text();
-
+  
+        const text = await res.text();
+  
         if (res.ok) {
+          // success UX (matches your existing pattern)
           Swal.fire({
             icon: 'success',
             title: 'Registered successfully!',
@@ -152,24 +158,23 @@
           Swal.fire({
             icon: 'error',
             title: 'Registration Failed',
-            text: responseText || 'Please try again.',
+            text: text || 'Please try again.',
             confirmButtonColor: '#ef4444',
             background: '#0b0b0b',
             color: '#e5e5e5'
           });
         }
-      } catch (error) {
+      } catch (err) {
+        console.error("Register error:", err);
         Swal.fire({
           icon: 'error',
           title: 'Server Error',
-          text: 'Unable to connect. Try again later.',
-          confirmButtonColor: '#ef4444',
-          background: '#0b0b0b',
-          color: '#e5e5e5'
+          text: 'Unable to connect. Try again later.'
         });
       }
     });
   </script>
+  
 
 </body>
 </html>
