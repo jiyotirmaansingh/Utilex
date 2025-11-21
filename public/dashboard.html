@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdn.socket.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http://localhost:8080 ws://localhost:8080 http://127.0.0.1:5500; img-src 'self' data: http://127.0.0.1:5500 https:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; frame-ancestors 'self'; base-uri 'self';">
+  <title>Utilex | Dashboard</title>
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Socket.io -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <style>
+    /* 🌫️ Glassmorphic styles */
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Custom scrollbar */
+    #messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+    }
+
+    #messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+
+<body class="bg-[#000300] h-screen flex justify-center items-center text-gray-100 font-inter overflow-hidden">
+
+  <!-- 💬 Chat Container -->
+  <div id="appContainer"
+    class="opacity-0 translate-y-5 transition-all duration-700 ease-out w-full max-w-lg h-[90vh] glass rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/10">
+
+    <!-- 🔝 Header -->
+    <div
+      class="glass bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white text-lg font-semibold px-5 py-3 flex justify-between items-center">
+      <span id="chat-room" class="tracking-wide">Utilex • Room: general</span>
+      <button onclick="logout()"
+        class="text-sm bg-red-500/70 px-3 py-1.5 rounded-md hover:bg-red-600 transition-all duration-300">
+        Logout
+      </button>
+    </div>
+
+    <!-- 👥 Invite Area -->
+    <div class="px-4 pt-3 pb-1 bg-white/5 border-b border-white/10">
+      <select id="userSelect"
+        class="text-sm p-2 rounded-md w-full bg-white/10 text-gray-200 focus:outline-none">
+        <option disabled selected>Invite someone to your room</option>
+      </select>
+      <button onclick="inviteUser()"
+        class="mt-2 w-full bg-green-600 hover:bg-green-700 py-2 rounded-md font-semibold text-white transition-all duration-300">
+        Invite User
+      </button>
+    </div>
+
+    <!-- 🗨️ Messages Section -->
+    <div id="messages"
+      class="flex-1 overflow-y-auto p-4 space-y-3 bg-white/5 text-sm scroll-smooth">
+    </div>
+
+    <!-- ✍️ Typing Indicator -->
+    <div id="typing" class="text-xs text-gray-400 px-5 py-1 h-5 italic"></div>
+
+    <!-- 💬 Input Area -->
+    <div class="p-4 flex gap-3 border-t border-white/10 bg-white/5">
+      <input id="ip" type="text" placeholder="Type a message..."
+        class="flex-1 glass text-white border border-white/20 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 outline-none placeholder-gray-400"
+        oninput="handleTyping()" />
+      <button onclick="sendMessage()"
+        class="bg-green-600 hover:bg-green-700 rounded-full px-5 py-2 font-semibold text-white transition-all duration-300">
+        Send
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 🌟 Smooth fade-in for chat container
+    window.addEventListener("DOMContentLoaded", () => {
+      const app = document.getElementById("appContainer");
+      requestAnimationFrame(() => {
+        app.classList.remove("opacity-0", "translate-y-5");
+      });
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token") || localStorage.getItem("token");
+    const name = params.get("name") || localStorage.getItem("name");
+
+    if (!token || !name) {
+      alert("You must login first.");
+      window.location.href = "/login.html";
+    }
+
+    let room = prompt("Enter room name to join:", "general") || "general";
+    document.getElementById("chat-room").innerText = `Utilex • Room: ${room}`;
+
+    const socket = io("http://localhost:8080", { transports: ["websocket"] });
+    const input = document.getElementById("ip");
+    const messagesDiv = document.getElementById("messages");
+    const typingDiv = document.getElementById("typing");
+    let mySocketId;
+
+    socket.on("connect", () => {
+      mySocketId = socket.id;
+      socket.emit("joinRoom", { username: name, room });
+    });
+
+    function sendMessage() {
+      const msg = input.value.trim();
+      if (msg) {
+        socket.emit("gyan", msg);
+        input.value = "";
+        socket.emit("stopTyping");
+      }
+    }
+
+    // 💬 Append messages with smooth scroll
+    function appendMessage({ username: sender, content, timestamp }) {
+      const bubble = document.createElement("div");
+      const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const isMine = sender === name;
+
+      bubble.className = `max-w-[75%] px-4 py-3 rounded-2xl text-sm shadow-md transform transition-all duration-300 
+        ${isMine
+          ? "bg-green-600/70 text-white self-end ml-auto hover:scale-105"
+          : "bg-gray-700/60 text-gray-100 self-start hover:scale-105"}`;
+
+      bubble.innerHTML = `
+        <div class="font-semibold mb-0.5 text-[13px]">${sender}</div>
+        ${content}
+        <div class="text-[10px] text-right text-gray-300 mt-1">${time}</div>`;
+
+      messagesDiv.appendChild(bubble);
+
+      // Auto-scroll smoothly
+      bubble.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    let typingTimeout;
+    function handleTyping() {
+      socket.emit("typing");
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => socket.emit("stopTyping"), 1500);
+    }
+
+    socket.on("chatMessage", msg => appendMessage(msg));
+
+    socket.on("welcome", msg => {
+      const note = document.createElement("div");
+      note.className = "text-center text-gray-400 text-xs italic opacity-0 transition-opacity duration-300";
+      note.innerText = msg;
+      messagesDiv.appendChild(note);
+      requestAnimationFrame(() => note.classList.remove("opacity-0"));
+      note.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    });
+
+    socket.on("typing", msg => {
+      typingDiv.innerText = msg;
+      typingDiv.classList.add("opacity-100");
+    });
+
+    socket.on("stopTyping", () => {
+      typingDiv.classList.remove("opacity-100");
+      typingDiv.innerText = "";
+    });
+
+    socket.on("userList", users => {
+      const select = document.getElementById("userSelect");
+      select.innerHTML = '<option disabled selected>Select a user to invite</option>';
+      for (let id in users) {
+        if (id !== mySocketId) {
+          const opt = document.createElement("option");
+          opt.value = id;
+          opt.text = users[id];
+          select.appendChild(opt);
+        }
+      }
+    });
+
+    function inviteUser() {
+      const select = document.getElementById("userSelect");
+      const targetSocketId = select.value;
+      if (targetSocketId) {
+        socket.emit("inviteToRoom", { targetSocketId, room });
+      }
+    }
+
+    socket.on("roomInvite", ({ room, from }) => {
+      const accept = confirm(`${from} invited you to join room: ${room}. Accept?`);
+      if (accept) {
+        socket.emit("acceptInvite", { room });
+        alert(`You joined room: ${room}`);
+        document.getElementById("chat-room").innerText = `Utilex • Room: ${room}`;
+      }
+    });
+
+    function logout() {
+      const app = document.getElementById("appContainer");
+      app.classList.add("opacity-0", "-translate-y-5");
+      setTimeout(() => {
+        localStorage.clear();
+        window.location.href = "/login.html";
+      }, 500);
+    }
+
+    input.addEventListener("keypress", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+
+</body>
+
+</html>

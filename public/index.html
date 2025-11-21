@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdn.socket.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http://localhost:8080 ws://localhost:8080 http://127.0.0.1:5500; img-src 'self' data: http://127.0.0.1:5500 https:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; frame-ancestors 'self'; base-uri 'self';">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Utilex – Real-time chat made simple. Chat instantly with friends using MERN + Socket.IO.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>Utilex | Home</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    /* ==============================
+       PRELOADER & TRANSITION
+       ============================== */
+    :root {
+      --bg: #000300;
+      --brand: #22c55e; /* Utilex green */
+    }
+
+    /* Preloader container */
+    #preloader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.7s cubic-bezier(.2,.9,.2,1);
+      pointer-events: auto;
+    }
+
+    /* when we want to fade it */
+    #preloader.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* preloader logo styling */
+    .preloader-logo {
+      font-size: 7.5rem;
+      font-weight: 700;
+      color: var(--brand);
+      letter-spacing: 0.1em;
+      user-select: none;
+      animation:
+        glow 4s ease-out infinite,
+        float 4s ease-in infinite;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* gentle glow */
+    @keyframes glow {
+      0%, 100% {
+        text-shadow: 0 0 8px #22c55e33, 0 0 20px #16a34a55;
+      }
+      50% {
+        text-shadow: 0 0 18px #4ade8055, 0 0 36px #22c55e88;
+      }
+    }
+
+    /* float motion */
+    @keyframes float {
+      25% { transform: translateY(0); }
+      70% { transform: translateY(-10px); }
+      200% { transform: translateY(0); }
+    }
+
+    /* Hero logo: initially hidden and stacked exactly under preloader visual */
+    #heroLogo {
+      color: var(--brand);
+      letter-spacing: 0.02em;
+      font-weight: 700;
+      transition: opacity 0.8s cubic-bezier(.2,.9,.2,1), transform 0.8s cubic-bezier(.2,.9,.2,1);
+      opacity: 0;
+    }
+
+    /* Reveal state for hero heading that crossfades in as preloader fades out */
+    #heroLogo.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* keep your original small styles */
+    .glass-navbar {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.7s ease-out;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    button,
+    a {
+      border-radius: 8px !important;
+      transition: all 0.25s ease-in-out;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    section {
+      scroll-margin-top: 90px;
+    }
+
+    body {
+      background: var(--bg);
+      color: #e6eef0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      opacity: 0;
+      animation: fadeInPage 0.8s forwards 0.15s;
+    }
+
+    @keyframes fadeInPage {
+      to { opacity: 1; }
+    }
+
+    /* Make sure hero heading doesn't jump when it reveals: start slightly scaled/translated if you want */
+    .hero-heading-wrap {
+      position: relative;
+      overflow: visible;
+    }
+
+    /* ensure preloader icon text and hero use similar font size scale on small screens */
+    @media (max-width: 640px) {
+      .preloader-logo { font-size: 2.6rem; }
+      #heroLogo { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+
+<body class="bg-[#000300] text-gray-100 font-sans">
+  <!-- Preloader (shows on page open) -->
+  <div id="preloader" aria-hidden="true">
+    <h1 class="preloader-logo">Utilex</h1>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="glass-navbar fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center">
+    <a href="/index.html" class="text-2xl font-bold text-green-400 hover:text-green-300 transition">Utilex</a>
+    <button id="menu-toggle" class="text-green-400 sm:hidden focus:outline-none">
+      <i class="fas fa-bars text-2xl"></i>
+    </button>
+    <ul id="nav-links"
+      class="hidden sm:flex space-x-6 text-sm font-medium bg-[#000300] sm:bg-transparent absolute sm:static top-16 left-0 w-full sm:w-auto sm:space-x-6 sm:flex-row flex-col sm:items-center px-6 sm:px-0 py-4 sm:py-0">
+      <li><a href="#home" class="hover:text-green-400 transition block py-2 sm:py-0">Home</a></li>
+      <li><a href="#features" class="hover:text-green-400 transition block py-2 sm:py-0">Features</a></li>
+      <li><a href="#about" class="hover:text-green-400 transition block py-2 sm:py-0">About</a></li>
+      <li><a href="#contact" class="hover:text-green-400 transition block py-2 sm:py-0">Contact</a></li>
+      <li><a href="/login.html" class="hover:text-green-400 transition block py-2 sm:py-0">Login</a></li>
+      <li><a href="/register.html" class="hover:text-green-400 transition block py-2 sm:py-0">Register</a></li>
+    </ul>
+  </nav>
+
+  <main id="home" class="mt-24">
+    <!-- Hero Section -->
+    <section class="py-28 text-center px-4 fade-in hero-heading-wrap">
+      <!-- The hero heading contains the same brand word; we'll reveal it to create a continuous feel -->
+      <h1 id="heroLogo" class="text-5xl md:text-6xl font-bold text-green-400 mb-4">Utilex</h1>
+
+      <h2 class="text-3xl font-semibold text-white mb-4">Real-Time Chat Made Easy</h2>
+      <p class="text-lg text-gray-300 mb-6">Create rooms, invite friends, and talk instantly.</p>
+      <a href="/login.html"
+        class="bg-green-500 hover:bg-green-600 text-white px-8 py-3 font-semibold hover:scale-105 transition transform inline-block">
+        Get Started
+      </a>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 px-8 fade-in">
+      <h2 class="text-3xl font-semibold mb-12 text-center text-white">Why Utilex?</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div class="p-6 bg-[#111] border border-green-900/20 rounded-xl shadow-lg hover:border-green-500/40 transition">
+          <h3 class="text-xl font-bold mb-2 text-green-400">Fast & Secure</h3>
+          <p class="text-gray-300">Token-based login with end-to-end Socket communication.</p>
+        </div>
+        <div class="p-6 bg-[#111] border border-green-900/20 rounded-xl shadow-lg hover:border-green-500/40 transition">
+          <h3 class="text-xl font-bold mb-2 text-green-400">Real-Time Chat</h3>
+          <p class="text-gray-300">Send, receive & type instantly. No refresh needed.</p>
+        </div>
+        <div class="p-6 bg-[#111] border border-green-900/20 rounded-xl shadow-lg hover:border-green-500/40 transition">
+          <h3 class="text-xl font-bold mb-2 text-green-400">Room Support</h3>
+          <p class="text-gray-300">Create or join chat rooms with one-click invites.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 px-8 bg-[#0a0a0a] text-center fade-in">
+      <h2 class="text-3xl font-semibold mb-6 text-green-400">About Utilex</h2>
+      <p class="max-w-3xl mx-auto text-gray-300">
+        Utilex is a modern chat platform built on MongoDB, Express, Node.js, and Socket.IO. It’s designed for developers,
+        learners, and professionals who want real-time messaging made simple and scalable.
+      </p>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-20 px-8 fade-in">
+      <h2 class="text-3xl font-semibold mb-12 text-center text-green-400">What Users Say</h2>
+      <div class="max-w-4xl mx-auto grid gap-6 md:grid-cols-2">
+        <div class="p-6 border border-green-900/20 rounded-xl shadow-lg bg-[#111]">
+          <p class="text-gray-200">"Super simple and fast. Love the real-time typing!"</p>
+          <p class="text-sm text-gray-400 mt-2">- Aman, Developer</p>
+        </div>
+        <div class="p-6 border border-green-900/20 rounded-xl shadow-lg bg-[#111]">
+          <p class="text-gray-200">"Best app to teach students WebSocket-based chat."</p>
+          <p class="text-sm text-gray-400 mt-2">- Priya, Instructor</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 px-8 bg-[#0a0a0a] fade-in">
+      <h2 class="text-3xl font-semibold mb-6 text-center text-green-400">Contact Us</h2>
+      <form class="max-w-xl mx-auto space-y-4" id="contactForm">
+        <input type="text" name="name" placeholder="Your Name" required
+          class="w-full p-3 bg-[#111] border border-green-900/30 text-white placeholder-gray-400 focus:border-green-500 focus:ring-green-500" />
+        <input type="email" name="email" placeholder="Your Email" required
+          class="w-full p-3 bg-[#111] border border-green-900/30 text-white placeholder-gray-400 focus:border-green-500 focus:ring-green-500" />
+        <textarea name="message" rows="4" placeholder="Your Message" required
+          class="w-full p-3 bg-[#111] border border-green-900/30 text-white placeholder-gray-400 focus:border-green-500 focus:ring-green-500"></textarea>
+        <button type="submit"
+          class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 font-semibold hover:scale-105 transition transform">
+          Send
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-[#000300] text-gray-400 py-12 px-8 border-t border-green-900/30">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-12">
+
+      <!-- Brand -->
+      <div class="col-span-2">
+        <h3 class="text-3xl font-bold text-green-400 mb-4">Utilex.</h3>
+        <p class="text-sm text-gray-400 mb-6">
+          A modern real-time chat platform built for developers and learners worldwide. Connect, chat, and collaborate instantly.
+        </p>
+        <div class="flex space-x-4">
+          <a href="#" class="hover:text-green-400 transition" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="hover:text-green-400 transition" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" class="hover:text-green-400 transition" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="hover:text-green-400 transition" aria-label="GitHub"><i class="fab fa-github"></i></a>
+          <a href="#" class="hover:text-green-400 transition" aria-label="Dribbble"><i class="fab fa-dribbble"></i></a>
+        </div>
+      </div>
+
+      <!-- Solutions -->
+      <div>
+        <h4 class="text-green-400 font-semibold mb-4">Solutions</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#" class="hover:text-green-400">Analytics</a></li>
+          <li><a href="#" class="hover:text-green-400">Marketing</a></li>
+          <li><a href="#" class="hover:text-green-400">Commerce</a></li>
+          <li><a href="#" class="hover:text-green-400">Insights</a></li>
+        </ul>
+      </div>
+
+      <!-- Support -->
+      <div>
+        <h4 class="text-green-400 font-semibold mb-4">Support</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#" class="hover:text-green-400">Pricing</a></li>
+          <li><a href="#" class="hover:text-green-400">Documentation</a></li>
+          <li><a href="#" class="hover:text-green-400">Guides</a></li>
+          <li><a href="#" class="hover:text-green-400">API Status</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal -->
+      <div>
+        <h4 class="text-green-400 font-semibold mb-4">Legal</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#" class="hover:text-green-400">Claim</a></li>
+          <li><a href="#" class="hover:text-green-400">Policy</a></li>
+          <li><a href="#" class="hover:text-green-400">Terms</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="text-center text-sm text-gray-500 mt-12 border-t border-green-900/40 pt-6">
+      &copy; 2025 Utilex. All rights reserved.
+    </div>
+  </footer>
+
+  <!-- Scroll to Top Button -->
+  <button id="scrollTop"
+    class="fixed bottom-6 right-6 bg-green-500 text-white p-3 hidden hover:bg-green-600 transition shadow-lg">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <script>
+    // Ensure minimum display time to avoid flicker
+    (function () {
+      const MIN_DISPLAY = 1200; // ms - minimum preloader time
+      const start = performance.now();
+
+      function revealHeroAndRemovePreloader() {
+        const preloader = document.getElementById('preloader');
+        const heroLogo = document.getElementById('heroLogo');
+
+        // reveal hero logo (crossfade)
+        if (heroLogo) {
+          // Give hero a tiny translate to match a subtle motion if needed; here we just reveal opacity
+          heroLogo.classList.add('revealed');
+        }
+
+        // fade out preloader
+        if (preloader) {
+          preloader.classList.add('fade-out');
+          // remove from DOM for perf after transition
+          setTimeout(() => {
+            preloader.remove();
+          }, 750);
+        }
+      }
+
+      window.addEventListener('load', () => {
+        const elapsed = performance.now() - start;
+        const delay = Math.max(0, MIN_DISPLAY - elapsed);
+
+        // Slight overlap: reveal hero slightly before preloader fully removed for crossfade effect.
+        setTimeout(() => {
+          // reveal hero a little earlier so it appears under the fading preloader
+          const heroLogo = document.getElementById('heroLogo');
+          if (heroLogo) {
+            heroLogo.classList.add('revealed');
+          }
+        }, delay + 150); // reveal shortly before fade completes
+
+        setTimeout(revealHeroAndRemovePreloader, delay);
+      });
+    })();
+
+    // Mobile Menu Toggle
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('nav-links').classList.toggle('hidden');
+    });
+
+    // Contact form submission
+    document.getElementById("contactForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        Swal.fire("Sent!", "We’ve received your message.", "success");
+        e.target.reset();
+      } else {
+        Swal.fire("Oops!", "Something went wrong.", "error");
+      }
+    });
+
+    // Fade-in sections using IntersectionObserver
+    const sections = document.querySelectorAll(".fade-in");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, index) => {
+        if (entry.isIntersecting) {
+          entry.target.style.transitionDelay = `${index * 0.15}s`;
+          entry.target.classList.add("visible");
+        }
+      });
+    }, { threshold: 0.2 });
+    sections.forEach(section => observer.observe(section));
+
+    // Scroll-to-top button
+    const scrollBtn = document.getElementById("scrollTop");
+    window.addEventListener("scroll", () => {
+      scrollBtn.classList.toggle("hidden", window.scrollY < 200);
+    });
+    scrollBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  </script>
+</body>
+
+</html>
